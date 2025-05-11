@@ -52,6 +52,7 @@ export default defineConfig({
     ],
   },
   route: {
+    exclude: ['src/component/**/*'],
     cleanUrls: true,
   },
   plugins: [
