@@ -117,10 +117,13 @@ AI 助手在 Dify 中以“应用 (App)”的形式存在。我们需要创建�
 
 ### 安装小智后端服务
 
-小智后端服务是一个专门为 ESP32 这类微控制器（SenseCAP Watcher 就是基于 ESP32）设计的服务程序，它可以接收来自硬件的语音数据，进行识别，并将其转发给我们刚刚在 Dify 上创建的 AI 应用。
+小智后端服务是一个专门为 ESP32 系列微控制器（SenseCAP Watcher 就是基于 ESP32S3）设计的服务程序，它可以接收来自硬件的语音数据，进行识别，并将其转发给我们刚刚在 Dify 上创建的 AI 应用。
 
-执行如下快速安装脚本，如需要更多的功能需求，例如：OTA、记忆模块等等，请查看[部署方式选择](https://github.com/xinnan-tech/xiaozhi-esp32-server#-%E9%83%A8%E7%BD%B2%E6%96%B9%E5%BC%8F%E9%80%89%E6%8B%A9)：
+小智后端服务提供了两种方法进行安装：简化安装、全模块安装，具体请查阅[部署方式选择](https://github.com/xinnan-tech/xiaozhi-esp32-server#-%E9%83%A8%E7%BD%B2%E6%96%B9%E5%BC%8F%E9%80%89%E6%8B%A9)。
 
+我们推荐采用全模块进行安装，能够享受更便捷的体验。
+
+执行如下快速安装脚本
 ```bash
 curl -L -o xiaozhi-server-docker-setup.sh https://raw.githubusercontent.com/xinnan-tech/xiaozhi-esp32-server/main/docker-setup.sh
 chmod +x xiaozhi-server-docker-setup.sh
@@ -129,80 +132,78 @@ chmod +x xiaozhi-server-docker-setup.sh
 
 脚本执行完毕后，会在当前目录下创建一个名为 `xiaozhi-server` 的文件夹并自动下载小智后端服务所需的文件和基础的语音识别模型。
 
-#### 配置服务连接 Dify
+为了能够有完整功能体验，我们需要采用全模块的配置文件进行安装，请再次执行如下的指令：
 
-我们需要告诉小智后端服务如何找到并使用我们之前在 Dify 中创建的 AI 应用，即路由所有 LLMs 请求到 Dify 上，这需要修改一个配置文件。
+```bash
+cd xiaozhi-server
+wget https://raw.githubusercontent.com/xinnan-tech/xiaozhi-esp32-server/refs/heads/main/main/xiaozhi-server/docker-compose_all.yml
+wget https://raw.githubusercontent.com/xinnan-tech/xiaozhi-esp32-server/refs/heads/main/main/xiaozhi-server/config_from_api.yaml
+mv data/.config.yaml data/.config.yaml.bk
+mv config_from_api.yaml data/.config.yaml
+```
 
-<Tabs>
-  <Tab label="手动修改">
+现在，尝试启动全模块的小智后端服务的容器：
 
-- 进入 `xiaozhi-server` 文件夹，然后找到 `data` 文件夹，里面有一个名为 `.config.yaml` 的文件。
-- 使用文本编辑器 (如 VIM，VS Code, Notepad++, Sublime Text, 或系统自带的记事本) 打开这个 `.config.yaml` 文件。
+```bash
+docker compose -f docker-compose_all.yml up -d
+```
 
-修改文件中的两处关键信息：
+执行完后，再执行以下命令，查看日志信息。
 
-  <Steps>
-    ### 指定使用 DifyLLM
+```bash
+docker logs -f xiaozhi-esp32-server-web
+```
 
-    找到 `selected_module:` 下的 `LLM:` 配置项，将其值修改为 `DifyLLM`。
-    ```json
-    selected_module:
-      VAD: SileroVAD # 假设这是其他配置
-      ASR: FunASR    # 假设这是其他配置
-      LLM: DifyLLM   # <-- 修改此处
-    ```
+当你看到输出日志时，说明你的智控台启动成功了。
 
-    ### 配置 DifyLLM
-    找到文件末尾的 `DifyLLM:` 配置段，修改其中的 `base_url` 和 `api_key`。
-    - `api_key`: 将这里的值替换成你**在上一步从 Dify 应用中获取到的 API 密钥** (例如 `app-T9jHW9pCtj3NVMHHPAPrNFAg`)。
-    - `base_url`: 这个地址指向 Dify API 服务的内部 Docker 地址。请将其设置为 `http://dify-api-1:5001/v1`。 (我们稍后会确保小智服务能找到名为 `dify-api-1` 的服务)。
-    
-    ```json
-    DifyLLM:
-      # 定义LLM API类型
-      type: dify
-      base_url: http://docker-api-1:5001/v1 # <-- 关键修改，使用 Docker 服务名
-      api_key: app-T9jHW9pCtj3NVMHHPAPrNFAg # <-- 替换为你的 Dify API Key
-      mode: chat-messages
-    ```
+```shell
+2025-xx-xx 22:11:12.445 [main] INFO  c.a.d.s.b.a.DruidDataSourceAutoConfigure - Init DruidDataSource
+2025-xx-xx 21:28:53.873 [main] INFO  xiaozhi.AdminApplication - Started AdminApplication in 16.057 seconds (process running for 17.941)
+http://localhost:8002/xiaozhi/doc.html
+```
 
-    修改完成后，保存并关闭 `.config.yaml` 文件。
-  </Steps>
+现在，你可以访问 `http://localhost:8002`，登录智控台，并注册第一个用户。第一个用户就是超级管理员，后续只能通过超级管理员创建其他的普通用户。
 
-  </Tab>
-  <Tab label="自动脚本">
+:::details Docker 8000 端口冲突
 
-  **1. 下载脚本：**
+小智后端服务默认会使用一些网络端口（例如，Websocket 服务默认使用宿主机的 8000 端口映射到容器的 8000 端口）。如果这些端口已经被你电脑上的其他程序占用了，`docker compose up -d` 命令可能会失败并提示端口冲突。
 
-  ```shell
-  curl -o update_xiaozhi_config.sh https://files.seeedstudio.com/wiki/solution/application/dify-ha-mcp/update_xiaozhi_config_zh.sh
-  ```
+此时，你需要编辑 `xiaozhi-server` 文件夹下的 `docker-compose_all.yml` 文件。
 
-  **2. 运行脚本：**
+分别找到 `xiaozhi-esp32-server` 和 `xiaozhi-esp32-server-web` 服务的 `ports:` 部分，例如：
 
-  确保您的终端当前工作目录是 `xiaozhi-server` 文件夹下。
+```yaml
+xiaozhi-esp32-server:
+  ports:
+    - "8088:8000" # 左边是宿主机端口，右边是容器端口
+xiaozhi-esp32-server-web:
+  ports:
+    - "8002:8002"
+```
 
-  执行脚本，并将您的 Dify API 密钥作为参数传递给它。将 `YOUR_DIFY_API_KEY` 替换为您实际的 API 密钥（例如 `app-T9jHW9pCtj3NVMHHPAPrNFAg`）。
+- 如果 `8000` 端口冲突，你可以将其修改为其他未被占用的端口，比如 `8088`，那么配置就变成 `- "8088:8000"`。修改后保存文件，再重新运行 `docker compose up -d`。
+- **注意**：如果你修改了这里的宿主机端口（例如从 `8000` 改为 `8088`），那么在配置`/data.config.yaml` 和配置 SenseCAP Watcher 时，都要使用对应的新端口号。
 
-  例如：
-  
-  ```shell
-  ./update_xiaozhi_config app-T9jHW9pCtj3NVMHHPAPrNFAg
-  ```
+:::
 
-  **3. 检查结果：**
+<Steps>
 
-  脚本执行后会输出提示信息，告知操作是否成功以及备份文件的位置。
-  您可以手动打开 xiaozhi-server/data/.config.yaml 文件（例如使用 VIM，VS Code, Notepad++, Sublime Text, 或系统自带的记事本）来验证更改是否已正确应用。
+### 参数管理
 
-  </Tab>
-</Tabs>
+登录超级管理员账号后，在智控台中，顶部菜单找到参数管理，找到列表中第一条数据，参数编码是`server.secret`，复制它到参数值。
+
+修改 `xiaozhi-server` 下的 `data` 目录的 `.config.yaml` 文件，找到 `manager-api` 配置项，修改 `secret` 值为复制的参数值。
+同时修改 url 链接为 `http://xiaozhi-esp32-server-web:8002/xiaozhi`。
+
+```yaml
+manager-api:
+  url: http://xiaozhi-esp32-server-web:8002/xiaozhi
+  secret: 12345678-xxxx-xxxx-xxxx-123456789000 # 请替换为你的server.secret值
+```
 
 ### 配置容器间通信
 
 由于 Dify 和小智后端服务是分别通过 Docker 启动的，默认情况下它们可能在不同的“虚拟网络”里，无法直接通信。我们需要将 Dify 的 API 服务容器连接到小智服务的网络中。
-
-安装后 Dify 后, Docker 容器服务名通常情况下是固定的，比如我们要利用的 Dify 相关容器之一是就是`dify-api-1`，小智后端服务也有都有的网络名为 `xiaozhi-server_default`。
 
 ```shell
 docker network connect xiaozhi-server_default docker-api-1
@@ -214,12 +215,11 @@ docker network connect xiaozhi-server_default docker-api-1
 你可能会考虑使用 `host.docker.internal`（一个特殊的 DNS 名称，用于从 Docker 容器内部访问宿主机）作为一种连接方案。然而，请注意，`docker-api-1` 服务（即 Dify API 容器）并未将其端口映射到宿主机，或者其服务本身不直接监听宿主机的网络接口，那么 `xiaozhi-server` 容器将无法通过 `host.docker.internal:5001` 的方式成功访问到 `docker-api-1`。因此，确保两个容器在同一 Docker 网络并通过服务名通信是更为推荐和可靠的配置方法，尤其是在 `docker-api-1` 服务主要在容器网络内部提供服务时。
 :::
 
-### 启动小智后端服务
+### 重启 xiaozhi-esp32-server
+配置了如上信息之后，由于每次“零部署”方式安装小智后端服务，用到了 `server.secret` 去连接服务，所以此时需要重启小智后端服务来使其生效。
 
-完成了如上步骤之后，在 `xiaozhi-server` 文件夹的根目录下，执行以下命令：
-
-```shell
-docker compose up -d # or docker-compose up -d
+```bash
+docker restart xiaozhi-esp32-server
 ```
 
 查看小智后端服务运行日志 (可选):
@@ -231,55 +231,83 @@ docker logs -f xiaozhi-esp32-server
 
 (`xiaozhi-esp32-server` 是小智服务容器的默认名称。按 `Ctrl+C` 可以退出日志查看。)
 
-:::details Docker 8000 端口冲突
+如果你能看到，类似以下日志,则是Server启动成功的标志。
 
-小智后端服务默认会使用一些网络端口（例如，Websocket 服务默认使用宿主机的 8000 端口映射到容器的 8000 端口）。如果这些端口已经被你电脑上的其他程序占用了，`docker compose up -d` 命令可能会失败并提示端口冲突。
-
-此时，你需要编辑 `xiaozhi-server` 文件夹下的 `docker-compose.yaml` 文件。
-
-找到 `ports:` 部分，例如：
-```yaml
-ports:
-  # ws服务端
-  - "8088:8000" # 左边是宿主机端口，右边是容器端口
-  # ota服务端 (固件更新服务)
-  - "8002:8002"
+```
+25-02-23 12:01:09[core.websocket_server] - INFO - Websocket地址是      ws://xxx.xx.xx.xx:8000/xiaozhi/v1/
+25-02-23 12:01:09[core.websocket_server] - INFO - =======上面的地址是websocket协议地址，请勿用浏览器访问=======
+25-02-23 12:01:09[core.websocket_server] - INFO - 如想测试websocket请用谷歌浏览器打开test目录下的test_page.html
+25-02-23 12:01:09[core.websocket_server] - INFO - =======================================================
 ```
 
-- 如果 `8000` 端口冲突，你可以将其修改为其他未被占用的端口，比如 `8088`，那么配置就变成 `- "8088:8000"`。修改后保存文件，再重新运行 `docker compose up -d`。
-- **注意**：如果你修改了这里的宿主机端口（例如从 `8000` 改为 `8088`），那么在下一步配置 SenseCAP Watcher 时，也要使用新的端口号。
+假设你电脑的 IP 地址是 `192.168.101.109`，那么此时，你的小智后端服务的 OTA 和 Websocket 接口应该分别是：
 
-:::
+OTA接口：
+
+```
+http://192.168.101.109:8002/xiaozhi/ota/
+```
+Websocket接口：
+
+```
+ws://192.168.101.109:8000/xiaozhi/v1/
+```
+
+> 记得修改 `192.168.101.109` 为你的小智服务所在的 IP 地址。
+
+### 配置服务连接 Dify
+
+我们需要告诉小智后端服务如何找到并使用我们之前在 Dify 中创建的 AI 应用，即路由所有 LLMs 请求到 Dify 上，我们需要修改大语言模型的配置；
+
+再次登录到小智后端服务的智控台，在顶部菜单找到`模型配置`，然后在左侧栏点击`大语言模型`，找到第一条`Dify`，点击修改按钮， 弹出修改框后，将你在 Dify 中创建的应用的 API 密钥填写到 API 密钥中。并修改基础 URL 为 `http://dify-api-1:5001/v1`。
+
+> [!tip]
+> 你也可以创建多个 Dify 应用，然后在智控台中创建多个 Dify 大语言模型。
+
+### 添加智能体
+
+点击顶部菜单的`智能体`，点击`添加智能体`，任意填写名字，比如`Dify_Agent`。
+
+在添加的 `Dify_Agent` 中，点击`配置角色`进入角色配置，然后修改右侧栏目的`大语言模型(LLM)` 为 `Dify`（你之前修改的 Dify 接入配置），其他的功能按需修改，点击`保存配置`。
+
+我们将在下一节配置助手 Watcher 的时候会用到。
+
+</Steps>
+
 
 ## Step 2:  配置 SenseCAP Watcher
 
 现在，我们需要配置 SenseCAP Watcher 设备，让它知道去哪里连接我们刚刚搭建好的小智后端服务。
 
 :::note 注意
-SenseCAP Watcher 可能支持固件在线更新 (OTA)。本文档基于 Seeed 官方提供的[小智固件分支](https://github.com/Seeed-Studio/xiaozhi-esp32)分支，它允许不重新编译固件就能修改 Websocket 地址。如果你使用了其他固件分支，或者自己编译固件并修改了 Websocket 地址，建议根据你的情况调整 OTA 设置或选择你自己的 OTA 地址，或者暂时关闭 OTA 功能，以免配置被意外覆盖。
+SenseCAP Watcher 本篇采用的是[小智 AI 聊天机器人](https://github.com/78/xiaozhi-esp32) `1.6.2` 版本，如果你使用的是其他版本，可能需要根据你的情况调整配置。
 :::
 
-<Steps>
-  ### 连接到 SenseCAP Watcher 的命令行
+### 修改 OTA 地址
 
-  你需要一种方式来给 SenseCAP Watcher 输入命令。通常，这可以通过 USB 数据线连接电脑，并使用串口终端工具（如 PuTTY, Terminus, 或者 Arduino IDE 的串口监视器）来实现。具体的连接方法请参考 SenseCAP Watcher 的使用说明。
+上电 SenseCAP Watcher，用任意设备连接到 SenseCAP Watcher 的 WiFi 网络。
 
-  ### 修改 Websocket 地址
+连接成功后，访问 `192.168.4.1` 进行配置 Wi-Fi 热点连接和 OTA 地址。
 
-  连接成功并进入 SenseCAP Watcher 的命令行界面后，输入以下指令，并按回车：
-  `websocket -a ws://<IP_地址>:<端口号>/xiaozhi/v1/`
-  - **`<IP_地址>`**: 替换成运行小智后端服务的那台电脑的局域网 IP 地址（例如 `192.168.101.109`，就是你之前用来访问 Dify 面板的那个 IP）。
-  - **`<端口号>`**: 替换成小智后端服务暴露的 Websocket 端口号。如果你在上面没有修改过 `xiaozhi-server` 的 `docker-compose.yaml` 文件，那么这里就是 `8000`。如果你修改过（比如改成了 `8088`），则这里要用你修改后的端口号。
+OTA 地址则应为：
+```
+http://<IP_地址>:<port>/xiaozhi/ota/
+```
+- **`<IP_地址>`**: 替换成运行小智后端服务的那台电脑的局域网 IP 地址（例如 `192.168.101.109`）。
+- **`<port>`**: 替换成小智后端服务暴露的 OTA 端口号。如果你在上面没有修改过 `xiaozhi-server` 的 `docker-compose.yaml` 文件，那么这里就是 `8002`。如果你修改过（比如改成了 `8088`），则这里要用你修改后的端口号。
 
-  **例如**: 如果你的小智服务器 IP 是 `192.168.101.109`，端口是 `8000`，那么完整的指令就是：
+例如：
+```
+http://192.168.101.109:8002/xiaozhi/ota/
+```
 
-  ``` shell
-  websocket -a ws://192.168.101.109:8000/xiaozhi/v1/
-  ```
-  ![](https://files.seeedstudio.com/wiki/solution/application/dify-ha-mcp/xiaozhi-websocket-modify.png)
-</Steps>
+配置完后并确定后，设备会自动重启，尝试连接到小智后端服务。
 
-Watcher 设备将会保存这个设置，除非你重置了。
+当成功连接到 OTA 服务后，Watcher 设备将会播报一个验证码。
+
+这时，在智控台创建的`Dify_Agent`智能体下，点击`设备管理`进行设备添加，点击`新增`，并把设备播报的验证码填入，点击`保存`。
+
+如上配置完成之后，Watcher 就可以连接到小智后端服务了。
 
 🎉到这里，所有的软件安装和硬件基础配置工作就全部完成了！接下来，我们将专注于在 Dify 平台上“编排”我们的 AI 应用，让它能理解并响应我们的智能家居控制指令。
 
@@ -405,3 +433,10 @@ import { Tweet } from 'react-tweet'
 
 <Tweet id="1910315965675712738" />
 
+
+## Reference
+
+- [小智 AI 聊天机器人](https://github.com/78/xiaozhi-esp32)
+- [小智后端服务](https://github.com/xinnan-tech/xiaozhi-esp32-server)
+- [Dify](https://docs.dify.ai/zh-hans/introduction)
+- [Home Assistant MCP Server](https://www.home-assistant.io/integrations/mcp_server/)
