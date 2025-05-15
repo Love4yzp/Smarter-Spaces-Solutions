@@ -1,6 +1,6 @@
 [
   {
-    "text": "场景应用",
+    "text": "应用场景",
     "link": "/scenarios/",
     "activeMatch": "^/scenarios/"
   },
@@ -8,6 +8,11 @@
     "text": "实践案例",
     "link": "/cases/",
     "activeMatch": "^/cases/"
+  },
+  {
+    "text": "设备仓库",
+    "link": "/devices/",
+    "activeMatch": "^/devices/"
   },
   {
     "text": "发布动态",

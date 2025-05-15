@@ -1,4 +1,16 @@
 {
+  "scenarios":{
+    "en": "Scenarios",
+    "zh": "场景"
+  },
+  "cases":{
+    "en": "Cases",
+    "zh": "案例"
+  },
+  "updates":{
+    "en": "Updates",
+    "zh": "更新"
+  },
   "gettingStarted": {
     "en": "Getting Started",
     "zh": "开始"
