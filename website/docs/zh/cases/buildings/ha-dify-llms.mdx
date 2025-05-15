@@ -1,20 +1,22 @@
-import { SourceCode, Steps } from '@theme';
+import { SourceCode, Steps } from 'rspress/theme';
 import { Tab, Tabs } from 'rspress/theme';
 import LoomEmbed from '@components/LoomEmbed';
 
 # 轻松上手：将 AI 融入你的智能家居
 
-> 清晨，你对着床头的 SenseCAP Watcher 轻语：“Jarvis，早安，今天天气怎么样？顺便帮我打开咖啡机。”(你也可以修改唤醒词为“小智”)
->
-> 你的 AI 助手立即回应：“早上好！今天天气晴朗，气温预计在 18 到 25 摄氏度。咖啡机已开启，稍后为您准备好香浓的咖啡。”与此同时，客厅的智能灯缓缓亮起，咖啡机也开始运作。
+:::note 想象一下
+清晨，你对着床头的 SenseCAP Watcher 轻语：“Jarvis，早安，今天天气怎么样？顺便帮我打开咖啡机。”(你也可以修改唤醒词为“小智”)
 
-> 晚上，你回到家，疲惫地说：“Jarvis，我回来了，把客厅灯光调暗一些，并播放一些轻音乐。”
+你的 AI 助手立即回应：“早上好！今天天气晴朗，气温预计在 18 到 25 摄氏度。咖啡机已开启，稍后为您准备好香浓的咖啡。”与此同时，客厅的智能灯缓缓亮起，咖啡机也开始运作。
 
-> AI 助手理解你的指令，柔和地调整了客厅的灯光，并通过 Home Assistant 控制音响播放起舒缓的音乐。如果你好奇家里的温湿度，只需再问一句：“现在室内温度和湿度是多少？”，它会即时播报相关信息。
+晚上，你回到家，疲惫地说：“Jarvis，我回来了，把客厅灯光调暗一些，并播放一些轻音乐。”
 
-> 更进一步，当你想了解最新的时政动态时，你可以问：“Jarvis，最近有什么我会感兴趣的新闻吗？”
+AI 助手理解你的指令，柔和地调整了客厅的灯光，并通过 Home Assistant 控制音响播放起舒缓的音乐。如果你好奇家里的温湿度，只需再问一句：“现在室内温度和湿度是多少？”，它会即时播报相关信息。
 
-> 如果你的 Dify 应用配置了相关的知识库（如网页爬虫、Notion 等），AI 助手就能从这些知识库中检索所需的信息，并将最新的动态、资讯或你关心的内容以简明扼要的方式告知你。这不仅让你能够及时获取更新，还能实现个性化的信息推送，提升智能家居的交互体验。
+更进一步，当你想了解最新的时政动态时，你可以问：“Jarvis，最近有什么我会感兴趣的新闻吗？”
+
+如果你的 Dify 应用配置了相关的知识库（如网页爬虫、Notion 等），AI 助手就能从这些知识库中检索所需的信息，并将最新的动态、资讯或你关心的内容以简明扼要的方式告知你。这不仅让你能够及时获取更新，还能实现个性化的信息推送，提升智能家居的交互体验。
+:::
 
 本文将分步骤讲解如何使用 Dify、小智后端服务和 SenseCAP Watcher，将这样一个具备情境理解、设备控制、状态查询乃至知识问答能力的 AI 助手融入你的 Home Assistant 智能家居系统。你将学会如何通过简单的语音交互，让 AI 真正成为你智能生活的得力助手。
 
@@ -50,7 +52,7 @@ import LoomEmbed from '@components/LoomEmbed';
 > 
 > `curl -s https://static.1ms.run/1ms-helper/scripts/install.sh | sudo bash /dev/stdin config`
 >
-> 请注意：此脚本由第三方提供，此处引用仅作示例，请用户自行评估其适用性与风险。
+> 请注意：此脚本由[第三方](https://1ms.run)提供，此处引用仅作示例，请用户自行评估其适用性与风险。
 
 执行如下的命令安装 Docker，详情请看 [Dify Install](https://docs.dify.ai/en/getting-started/install-self-hosted/docker-compose)：
 
@@ -233,7 +235,7 @@ docker logs -f xiaozhi-esp32-server
 
 如果你能看到，类似以下日志,则是Server启动成功的标志。
 
-```
+```shell
 25-02-23 12:01:09[core.websocket_server] - INFO - Websocket地址是      ws://xxx.xx.xx.xx:8000/xiaozhi/v1/
 25-02-23 12:01:09[core.websocket_server] - INFO - =======上面的地址是websocket协议地址，请勿用浏览器访问=======
 25-02-23 12:01:09[core.websocket_server] - INFO - 如想测试websocket请用谷歌浏览器打开test目录下的test_page.html
@@ -242,11 +244,12 @@ docker logs -f xiaozhi-esp32-server
 
 假设你电脑的 IP 地址是 `192.168.101.109`，那么此时，你的小智后端服务的 OTA 和 Websocket 接口应该分别是：
 
-OTA接口：
+OTA接口： 
 
-```
+```bash
 http://192.168.101.109:8002/xiaozhi/ota/
 ```
+
 Websocket接口：
 
 ```
@@ -290,11 +293,11 @@ SenseCAP Watcher 本篇采用的是[小智 AI 聊天机器人](https://github.co
 连接成功后，访问 `192.168.4.1` 进行配置 Wi-Fi 热点连接和 OTA 地址。
 
 OTA 地址则应为：
+```bash
+http://IP_地址:端口号/xiaozhi/ota/
 ```
-http://<IP_地址>:<port>/xiaozhi/ota/
-```
-- **`<IP_地址>`**: 替换成运行小智后端服务的那台电脑的局域网 IP 地址（例如 `192.168.101.109`）。
-- **`<port>`**: 替换成小智后端服务暴露的 OTA 端口号。如果你在上面没有修改过 `xiaozhi-server` 的 `docker-compose.yaml` 文件，那么这里就是 `8002`。如果你修改过（比如改成了 `8088`），则这里要用你修改后的端口号。
+- **`IP_地址`**: 替换成运行小智后端服务的那台电脑的局域网 IP 地址（例如 `192.168.101.109`）。
+- **`端口号`**: 替换成小智后端服务暴露的 OTA 端口号。如果你在上面没有修改过 `xiaozhi-server` 的 `docker-compose.yaml` 文件，那么这里就是 `8002`。如果你修改过（比如改成了 `8088`），则这里要用你修改后的端口号。
 
 例如：
 ```
@@ -433,8 +436,7 @@ import { Tweet } from 'react-tweet'
 
 <Tweet id="1910315965675712738" />
 
-
-## Reference
+## 引用
 
 - [小智 AI 聊天机器人](https://github.com/78/xiaozhi-esp32)
 - [小智后端服务](https://github.com/xinnan-tech/xiaozhi-esp32-server)
