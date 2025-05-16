@@ -1,12 +1,8 @@
 [
-    {
-        "type": "file",
-        "name": "index",
-        "label": "应用案例概览"
-    },
-    {
-        "type": "dir",
-        "name": "buildings",
-        "label": "buildingAutomation"
-    }
+  {
+    "type": "dir",
+    "name": "buildings",
+    "label": "buildingAutomation"
+  },
+  "ha-energy-monitoring"
 ]
