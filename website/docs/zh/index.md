@@ -8,7 +8,7 @@ hero:
   actions:
     - theme: brand
       text: 快速开始
-      link: /scenarios/
+      link: scenarios/intelligent-building/smes-energy-management
     - theme: alt
       text: GitHub
       link: https://github.com/Seeed-Studio/Smarter-Spaces-Solutions

@@ -1,0 +1,31 @@
+{/* **Node-RED Docker 持久化安装** */}
+
+```bash
+# 创建数据目录
+mkdir -p ~/.node-red
+
+# 运行容器
+docker run -d \
+  --name node-red \
+  -p 1880:1880 \
+  -v ~/.node-red:/data \
+  --restart unless-stopped \
+  nodered/node-red
+```
+
+:::details 说明
+
+**数据存储**
+数据将保存在 `~/.node-red/` 目录中，包含：
+- `flows.json` - 流程文件
+- `settings.js` - 配置文件  
+- `node_modules/` - 插件目录
+
+**关键参数**
+- `-v ~/.node-red:/data` - 数据持久化挂载，宿主机目录 → 容器内部目录
+- `-p 1880:1880` - 端口映射
+- `--restart unless-stopped` - 自动重启
+
+:::
+
+安装完成后访问：http://localhost:1880

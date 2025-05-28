@@ -1,1 +1,6 @@
-["ha-dify-llms"]
+[
+    "ha-control",
+    "ha-dify-llms",
+    "energy-monitoring-1",
+    "underground-wireless-network"
+]

@@ -2,7 +2,6 @@
   {
     "type": "dir",
     "name": "buildings",
-    "label": "buildingAutomation"
-  },
-  "ha-energy-monitoring"
+    "label": "intelligentBuilding"
+  }
 ]

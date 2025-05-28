@@ -25,7 +25,7 @@
   },
   "intelligentBuilding":{
     "en": "Intelligent Building",
-    "zh": "智慧建筑"
+    "zh": "智慧楼宇"
   },
   "smartBuilding":{
     "en": "Smart Building",
@@ -38,5 +38,9 @@
   "buildingAutomation":{
     "en": "Building Automation",
     "zh": "楼宇自动化"
+  },
+  "glossary":{
+    "en": "Glossary",
+    "zh": "术语表"
   }
 }

@@ -1,17 +1,12 @@
 [
     {
         "type": "dir",
-        "name": "intro",
-        "label": "gettingStarted"
+        "name": "intelligent-building",
+        "label": "intelligentBuilding"
     },
     {
         "type": "dir",
-        "name": "smart-building",
-        "label": "smartBuilding"
-    },
-    {
-        "type": "dir",
-        "name": "smart-home",
-        "label": "smartHome"
+        "name": "glossary",
+        "label": "glossary"
     }
 ]

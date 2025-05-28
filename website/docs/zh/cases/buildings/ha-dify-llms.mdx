@@ -1,8 +1,7 @@
-import { SourceCode, Steps } from 'rspress/theme';
-import { Tab, Tabs } from 'rspress/theme';
+import { Steps } from 'rspress/theme';
 import LoomEmbed from '@components/LoomEmbed';
 
-# 轻松上手：将 AI 融入你的智能家居
+# 接入 AI 空间管家至 Home Assistant
 
 :::note 想象一下
 清晨，你对着床头的 SenseCAP Watcher 轻语：“Jarvis，早安，今天天气怎么样？顺便帮我打开咖啡机。”(你也可以修改唤醒词为“小智”)
@@ -50,9 +49,9 @@ AI 助手理解你的指令，柔和地调整了客厅的灯光，并通过 Home
 > [!tip] 
 > 对于中国大陆用户可能需要更新 Docker 镜像源：
 > 
-> `curl -s https://static.1ms.run/1ms-helper/scripts/install.sh | sudo bash /dev/stdin config`
+> `bash <(curl -sSL https://linuxmirrors.cn/docker.sh)`
 >
-> 请注意：此脚本由[第三方](https://1ms.run)提供，此处引用仅作示例，请用户自行评估其适用性与风险。
+> 请注意：此脚本由[第三方](https://linuxmirrors.cn/)提供，此处引用仅作示例，请用户自行评估其适用性与风险。
 
 执行如下的命令安装 Docker，详情请看 [Dify Install](https://docs.dify.ai/en/getting-started/install-self-hosted/docker-compose)：
 

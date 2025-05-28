@@ -1,0 +1,351 @@
+import { Steps } from 'rspress/theme';
+import { Tab, Tabs } from 'rspress/theme';
+
+# 地库无线传感网络 - LoRa
+
+随着城市发展和基础设施建设的深入，“地库”（泛指各类地下空间，包括但不限于地下车库、储藏室、设备层、人防工程、管廊等）的数量和规模日益增大。这些地下空间普遍存在**通信信号覆盖难**的问题，传统有线通信方案（如以太网、光纤）部署成本高、周期长、后期维护不便，尤其对于已建成的地库改造更是困难重重。Wi-Fi、蓝牙等无线技术在地下复杂结构中信号衰减严重，覆盖范围有限。
+
+LoRa 免布线方案能够解决传统有线系统成本高昂、施工困难的痛点，为环境监测、安全保障、资产管理和节能控制等应用场景提供了经济高效的解决方案。
+
+与此同时，Meshtastic 作为一个开源的 LoRa 网络方案，提供了一个**低成本、易部署、免布线、可自组网**的无线通信解决方案。
+
+通过 Meshtastic 和 ReComputer R1000 系列的结合，能够接入传统的 RS485/Modbus 设备的同时，借助 NodeRED 进行低代码编程，极大地降低了开发成本。快速搭建和管理需要的应用。
+
+## **技术选型**
+
+在众多无线通信技术中，LoRa (Long Range) 技术因其**远距离、低功耗、强穿透性**的特点，在地下等复杂环境中展现出潜力。在本次方案中，这里对两种 LoRa 技术进行了对比。
+
+
+| 协议层面       | Meshtastic 方案                                | LoRaWAN (对比参考)                            | 地库场景关注点                       |
+| :--------- | :------------------------------------------- | :---------------------------------------- | :---------------------------- |
+| **物理层**    | LoRa调制 (CSS), Sub-GHz ISM频段, 可配置SF/BW/CR     | LoRa调制 (CSS), Sub-GHz ISM频段, 可配置SF/BW/CR  | **高SF提升穿透和距离**，但降低速率；选择合适频段   |
+| **网络拓扑**   | **Mesh (网状自组网)**                             | 星型 (Star of Stars)                        | **Mesh适应复杂结构，增强覆盖**           |
+| **节点通信**   | 节点间多跳转发，动态路由                                 | 终端节点与网关通信                                 | Mesh提供路径冗余                    |
+| **核心路由机制** | 基于Flooding和Store-and-Forward的分布式路由算法，节点维护邻居表 | 数据由网关转发至网络服务器(LNS)，LNS负责路由和设备管理           | Meshtastic路由简单高效，但大规模网络效率需关注  |
+| **中心化程度**  | **去中心化**                                     | 中心化 (依赖LNS, Join Server)                  | 去中心化降低单点故障，简化小型网络部署           |
+| **数据格式**   | Protocol Buffers (Protobuf) 为主               | 应用层数据格式由用户定义，LoRaWAN定义MAC层载荷              | Protobuf轻量高效                  |
+| **加密机制**   | AES-256信道加密 (基于预共享密钥 PSK)                    | 端到端加密 (AppSKey), 网络层加密 (NwkSKey), AES-128 | 两者均提供加密，Meshtastic的PSK管理需注意安全 |
+| **寻址方式**   | 基于节点ID进行寻址                                   | DevAddr (设备地址)                            | Meshtastic节点ID唯一标识            |
+| **消息确认**   | 支持ACK机制，可配置重传                                | LoRaWAN支持Confirmed/Unconfirmed消息类型        | ACK提高可靠性，但增加开销和延迟             |
+| **外部接口**   | BLE (App连接), Wi-Fi (TCP/IP, MQTT桥接), Serial  | 网关通过IP网络 (以太网,蜂窝) 连接LNS                   | Meshtastic提供多种灵活的数据导出方式       |
+
+
+虽然 Meshtastic 在商业成熟度和标准化方面不如 LoRaWAN，但其Mesh特性和低成本优势使其成为解决地库通信难题的一个极具吸引力的差异化方案。
+
+## 1应用场景
+
+| 应用分类         | 具体场景举例                       | Meshtastic方案价值      |
+| :----------- | :--------------------------- | :------------------ |
+| **环境监测**     | 温湿度、CO/NOx/O2/H2S等气体浓度、水浸监测  | 低成本传感器节点，无线回传，及时预警  |
+| **设备状态监控**   | 地下水泵、风机启停/故障状态，重要区域门磁开关状态    | 免布线监控，预防性维护         |
+| **简单消息与应急**  | 巡检人员状态上报/短消息，应急信标            | 弥补手机信号盲区，提供基础应急通信手段 |
+| **资产定位(辅助)** | 对移动设备或人员的大致区域定位 (基于RSSI或GPS) | 低成本实现粗略定位，辅助管理      |
+| **能耗监测(低频)** | 对特定用电设备进行低频次的能耗数据采集          | 简化能耗数据获取途径          |
+| **工业设备接入**       | 接入已有的的 Modbus 设备，而无需“智能升级”   | 拓展其的传输边界            |
+
+
+## 实战案例一：地库能源管理
+
+### 系统架构图
+
+<img src="https://files.seeedstudio.com/wiki/solution/application/underground-lora-wireless/energy-system-architecture.png" alt="energy-system-architecture" width="480" />
+
+<Tabs>
+
+<Tab value="internal" label="🏠 地库内部 (Meshtastic Mesh 网络)">
+
+| 节点类型              | 主要功能           | 技术实现与工作原理                                                                 |
+| ----------------- | -------------- | ------------------------------------------------------------------------- |
+| **传感器/设备节点**      | 温湿度、气体检测、门磁状态等 | 各种传感器（温湿度、气体、水浸、门磁等）或被控设备通过UART、I2C、SPI或GPIO连接到Meshtastic节点。              |
+| Meshtastic节点      | 负责数据收集和网络通信    | 由LoRa模块和微控制器（如ESP32）组成，运行Meshtastic固件。节点之间通过LoRa无线信号形成Mesh网络，自动进行数据路由和中继。 |
+| 数据出口节点(地面网关 Node) | 作为数据出口，连接地面系统  | 部分Meshtastic节点可以配置为数据出口，例如连接到Wi-Fi、以太网或通过蓝牙连接到手机，将Mesh网络内的数据转发到外部网络或监控中心。 |
+
+</Tab>
+
+<Tab value="surface" label="🌐 地面/监控中心">
+
+| 组件类型      | 核心职责                    | 功能特性与技术实现                                  |
+| --------- | ----------------------- | ------------------------------------------ |
+| **网关设备**  | 负责接收和处理 Meshtastic 网络数据 | 支持多种通信协议（LoRa、Wi-Fi、蓝牙、以太网），实现地库与地面系统的数据桥接 |
+| **应用服务器** | 提供数据处理、存储、分析和告警功能       | 支持实时数据流处理、历史数据查询、异常检测和报警推送                 |
+| **用户应用**  | 提供Web管理后台和移动端APP        | 支持实时监控、历史数据查看、设备管理、告警配置和远程控制功能             |
+
+</Tab>
+
+</Tabs>
+
+### **硬件选型** 🔩
+
+|   硬件组件类型    | 推荐型号/规格           | 地库应用场景考虑因素                                         |
+| :---------------: | :---------------------- | :----------------------------------------------------------- |
+| **服务器端网关**  | reComputer R1000        | 低成本集成平台，可同时运行Node-RED服务器、Meshtastic节点、数据存储等多个后台服务，支持多协议数据汇聚 |
+|  **边缘端网关**   | reComputer R1000        | 负责数据链路聚合、边缘计算、协议转换和远程采集控制，通过Meshtastic将现场数据实时推送至服务器端 |
+| **微控制器(MCU)** | Seeed XIAO ESP32 S3     | 考虑处理性能、超低功耗设计、集成无线功能(Wi-Fi/BLE)、开发生态完善、硬件成本控制 |
+| **LoRa通信芯片**  | Semtech SX1262          | 优化链路预算以穿透地库结构、超低功耗延长电池寿命、成本效益、与主控MCU兼容性 |
+|   **射频天线**    | 棒状天线<br/>SMA外接天线 | 频率特性匹配、信号增益优化、紧凑尺寸设计、便捷安装方式、抗金属环境干扰能力 |
+
+
+#### 装配 Meshtastic 节点
+
+我们可以采用原有 Seeed 设计的 [Meshtastic 模组](https://www.seeedstudio.com/Wio-SX1262-with-XIAO-ESP32S3-p-5982.html)进行接入。但在端侧设备的 R1000 这个区域中是没有被 Wi-Fi 信号覆盖的，而是通过 USB 串口的方式连接到 R1000 上。
+
+我们采用了另一种形式 Mini-PCle 的接口进行接入，而 R1000 通过 USB 串口的方式和这个 Meshtastic 设备进行通信。
+
+如下是采用 XIAO ESP32 S3 + LoRa SX1262 模组作为 Meshtastic 模组的节点，通过 Mini-PCle 接口进行接入。
+
+
+| 组件类型 | 产品图片 | 说明 |
+|---------|---------|------|
+| **Mini-PCIe Meshtastic 模组** | ![pcle-meshtastic-v1](https://files.seeedstudio.com/wiki/solution/application/underground-lora-wireless/pcle-meshtastic-v1.webp) | 基于 XIAO ESP32 S3 + LoRa SX1262 的 Meshtastic 节点，采用 Mini-PCIe 接口设计 |
+| **R1000 集成效果** | <img src="https://files.seeedstudio.com/wiki/solution/application/underground-lora-wireless/r1000-pcle-meshtastic-v1.webp" alt="r1000-pcle-meshtastic-v1" width="480" /> | R1000 通过 Mini-PCIe 接口接入 Meshtastic 模组，通过 USB 串口进行通信 |
+
+### 软件配置
+
+import InstallDocker from '@zh/reuse/install-docker.mdx';
+import InstallNodeRED from '@zh/reuse/install-nodered.mdx';
+
+在适用 R1000 系列的主机时，你需要确保你的系统中已经安装了 Docker 和 Node-RED。
+
+##### Docker 安装
+
+<InstallDocker />
+
+##### 安装 Node-RED
+
+<InstallNodeRED />
+
+安装完了 NodeRED 之后，你将在服务器端和端侧分别采用不同的 Flow。
+
+<Tabs>
+<Tab value="root" label="服务器端">
+
+![](https://files.seeedstudio.com/wiki/solution/application/underground-lora-wireless/root-json.png)
+
+</Tab>
+
+<Tab value="edge" label="边缘端">
+
+![](https://files.seeedstudio.com/wiki/solution/application/underground-lora-wireless/edge-json.png)
+
+</Tab>
+
+</Tabs>
+
+<Steps>
+
+
+### 配置 Meshtastic
+
+> 如果需要更新 Meshtastic 的固件，请访问 [Meshtastic Web Flasher](https://flasher.meshtastic.org/) 进行固件的获取和烧录。
+
+{/* TODO 采用 PCle 的板子，修改自己修改引脚，而不是官方的固件 */}
+
+在这里我们将利用 Meshtastic Python CLI 来进行操作，你可以通过 `pip3 install --upgrade "meshtastic[cli]`，详情访问 [Meshtastic Python CLI installation](https://meshtastic.org/docs/software/python/cli/installation/)。
+
+<Tabs>
+
+<Tab label="服务器端">
+
+```shell
+# 配置 LoRa 频段
+meshtastic --set lora.region "EU_868" --set lora.override_frequency 869.525
+
+# 根据需要修改设备名称
+meshtastic --set-owner 'ROOT' --set-owner-short 'root'
+
+# 获取当前设备的公钥
+meshtastic --get security.public_key # 假设你获得了 PUBLIC_KEY
+
+# 设定频道
+meshtastic --ch-set name "SEEED" --ch-set psk base64:AQ== --ch-index 0
+```
+
+</Tab>
+
+<Tab label="边缘端侧">
+
+```shell
+# 配置 LoRa 频段
+meshtastic --set lora.region "EU_868" --set lora.override_frequency 869.525
+
+# 根据需要修改设备名称
+meshtastic --set-owner 'EDGE' --set-owner-short '0001'
+
+# 设置管理员功能
+meshtastic --set security.admin_key "PUBLIC_KEY" # 填充你自己的 PUBLIC_KEY
+
+# 设定频道
+meshtastic --ch-set name "SEEED" --ch-set psk base64:AQ== --ch-index 0
+```
+
+</Tab>
+
+</Tabs>
+
+你可以根据你的需求进行更改设备的 owner 和 owner-short 的值，但需要确保在 Meshtastic 的网络中是唯一的。
+
+</Steps>
+
+### 传输协议定义
+
+协议解析层负责定义和解析基于 Meshtastic 的 Modbus 通信协议。其核心功能是将 Modbus 命令封装为紧凑型 JSON 格式，通过 Meshtastic 网络进行传输，支持设备间的透传通信。
+
+在未来可以采用 Protobuf 的方式进行传输。
+
+- **设备标识**：通过 `i` 字段标识发送设备。
+- **设备类型**：支持 Modbus RTU (`r`) 和 Modbus TCP (`t`) 两种设备类型。
+- **协议版本管理**：通过 `v` 字段标识协议版本，当前版本为 `1`。
+- **通道管理**：支持通过 `p` 字段标识 RS485 端口号或通信通道。
+- **Modbus 命令封装**：支持以下 Modbus 功能码：
+  - 读操作：`1` (读线圈)、`2` (读离散输入)、`3` (读保持寄存器)、`4` (读输入寄存器)
+  - 写操作：`5` (写单个线圈)、`6` (写单个寄存器)、`15` (写多个线圈)、`16` (写多个寄存器)
+- **数据封装**：支持通过 `d` 字段传输写操作所需的数据。
+- **会话管理**：可选支持 `ss` 字段，用于请求与响应的关联。
+
+#### 请求报文格式
+
+```json
+{
+  "i": "string",    // 发送设备的 ShortName
+  "t": "string",    // 设备类型 ("r" 或 "t")
+  "v": "string",    // 协议版本号
+  "p": "string",    // 通道号或端口号
+  "c": {            // Modbus 命令对象
+    "a": int,       // 从站地址 (1-247)
+    "f": int,       // 功能码 (1, 2, 3, 4, 5, 6, 15, 16)
+    "r": int,       // 起始寄存器地址
+    "n": int,       // 读取或写入的数量
+    "d": [int]      // 写入的数据数组 (仅在功能码 ≥ 5 时有效)
+  },
+  "ss": int         // 会话 ID (可选)
+}
+```
+
+#### 响应报文格式
+
+```json
+{
+  "i": "string",    // 响应设备的 ShortName
+  "ss": "string",   // 会话 ID (与请求一致)
+  "d": [int]        // 返回的数据数组 (根据数量 `n` 的值决定长度)
+}
+```
+
+请求报文由服务器端发送，响应报文由边缘端发送。
+
+:::details 请求报文示例
+
+<Tabs>
+<Tab label="读取保持寄存器 (功能码 3)">
+
+**请求报文**：
+```json
+{
+  "i": "0999",
+  "t": "r",
+  "v": "1",
+  "p": "2",
+  "c": {
+    "a": 1,
+    "f": 3,
+    "r": 40001,
+    "n": 2
+  }
+}
+```
+
+**响应报文**：
+```json
+{
+  "i": "000F",
+  "ss": "1742891806240",
+  "d": [480, 481]
+}
+```
+
+</Tab>
+
+<Tab label="写入单个寄存器 (功能码 6)">
+
+```json
+{
+  "i": "0999",
+  "t": "r",
+  "v": "1",
+  "p": "2",
+  "c": {
+    "a": 1,
+    "f": 6,
+    "r": 40001,
+    "n": 1,
+    "d": [1234]
+  },
+  "ss": "1742891806240",
+}
+```
+
+**响应报文**：
+```json
+{
+  "i": "000F",
+  "ss": "1742891806240",
+}
+```
+
+</Tab>
+
+</Tabs>
+
+:::
+
+### 实地安装部署
+
+>[!WARNING]
+> **电气安全是首要前提！**
+> 
+> 强电设备的安装、接线及改造工作**必须由具备资质的专业电工执行**，严格遵守当地电气安全规范。非专业人士切勿自行操作，以免发生危险。操作前务必确认断电并采取安全防护。
+
+#### 连接 R1000 到 RS485 设备
+
+根据电气规划，将 R1000 接入电源，并将进行数据采集的 RS485 设备通过 AB 线的接法接入 R1000 对应的口中。
+
+
+<img src="https://files.seeedstudio.com/wiki/solution/application/underground-lora-wireless/R1000-assembly.webp" alt="R1000-assembly" width="480" />
+
+### 采集数据
+
+正确安装完 R1000 之后，你就可以在服务器端的 NodeRED 中测试是否可以收到来自边缘端的数据。
+
+你可以通过 Meshtastic 下发 Modbus 命令，来测试是否可以收到来自边缘端的数据。
+
+```json
+{
+  "i": "0001",
+  "t": "r",
+  "v": "1",
+  "p": "1",
+  "c": {
+    "a": 1,
+    "f": 3,
+    "r": 40001,
+    "n": 2
+  }
+}
+```
+
+其中 `i` 字段为边缘端的 ShortName，`p` 字段为通道号，`c` 字段为 Modbus 命令对象。
+
+响应值可能为：
+
+```json
+{
+  "i": "root",
+  "ss": "1742891806240",
+  "d": [480, 481]
+}
+```
+
+
+
+
+

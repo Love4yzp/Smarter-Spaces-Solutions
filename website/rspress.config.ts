@@ -1,8 +1,10 @@
 import * as path from 'node:path';
+import { defineConfig } from 'rspress/config';
 import { pluginCallstackTheme } from '@callstack/rspress-theme/plugin';
 import { pluginFontOpenSans } from 'rspress-plugin-font-open-sans';
 import { pluginOpenGraph } from 'rsbuild-plugin-open-graph';
-import { defineConfig } from 'rspress/config';
+import mermaid from 'rspress-plugin-mermaid';
+import fileTree from 'rspress-plugin-file-tree';
 
 const DOCS_ROOT = path.join(__dirname, 'docs');
 const SRC_ROOT = path.join(__dirname, 'src');
@@ -58,6 +60,8 @@ export default defineConfig({
   plugins: [
     pluginCallstackTheme(),
     pluginFontOpenSans(),
-    pluginOpenGraph()
+    pluginOpenGraph(),
+    mermaid(),
+    fileTree(),
   ],
 });
