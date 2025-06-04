@@ -9,7 +9,19 @@ Home Assistant 不仅能够用于收集和管理各种设备数据，还能通�
 >[!note]
 > 平面热力图（Floorplan Heatmap）是一种将数据可视化叠加在建筑平面图或室内布局图上的技术。它通常使用从冷色调（如蓝色、绿色）到暖色调（如黄色、红色）的颜色编码，来直观地表示特定区域的数据强度、密度或频率。例如，它可以显示某个房间的人员活动频繁程度、特定区域的温度分布等。
 
-【实际图片】
+<img 
+  src="https://files.seeedstudio.com/wiki/solution/application/ha-heatmap/result_visualize.png" 
+  alt="sensecraft-model-face-detection" 
+  style={{ 
+    display: 'block', 
+    margin: '0 auto', 
+    width: '60%', 
+    height: 'auto',
+    borderRadius: '12px',
+    boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+  }}
+/>
+
 
 ## 人时统计范例
 
@@ -61,7 +73,7 @@ Home Assistant 不仅能够用于收集和管理各种设备数据，还能通�
   style={{ 
     display: 'block', 
     margin: '0 auto', 
-    width: '50%', 
+    width: '60%', 
     height: 'auto',
     borderRadius: '12px',
   }}
@@ -71,7 +83,7 @@ Home Assistant 不仅能够用于收集和管理各种设备数据，还能通�
 
 由于 Grove Vision V2 属于非标准设备，我们目前需要通过 Node-RED 来完成设备注册与数据显示。
 
-首先，你需要在 Node-RED 中导入“**人时统计.json**”Flow。
+首先，你需要在 Node-RED 中导入[人时统计.json](https://files.seeedstudio.com/wiki/solution/application/ha-heatmap/vision-v2-crowd-flow.json)，再继续下面的步骤：
 
 <Steps>
 
