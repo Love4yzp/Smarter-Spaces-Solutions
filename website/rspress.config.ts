@@ -21,6 +21,9 @@ export default defineConfig({
   markdown: {
     checkDeadLinks: true,
   },
+  mediumZoom: {
+    selector: '.rspress-doc img',
+  },
   globalStyles: path.join(SRC_ROOT, 'styles/index.css'),
   locales: [
     {

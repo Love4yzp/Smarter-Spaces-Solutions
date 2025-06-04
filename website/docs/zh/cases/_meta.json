@@ -3,5 +3,6 @@
     "type": "dir",
     "name": "buildings",
     "label": "intelligentBuilding"
-  }
+  },
+  "crowd-flow-monitoring"
 ]
