@@ -4,5 +4,6 @@
     "name": "buildings",
     "label": "intelligentBuilding"
   },
-  "crowd-flow-monitoring"
+  "crowd-flow-monitoring",
+  "ai-presence-control"
 ]
