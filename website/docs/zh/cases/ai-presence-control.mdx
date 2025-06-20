@@ -11,7 +11,7 @@ import { Tab, Tabs } from 'rspress/theme';
 
 ## 概览
 
-本项目基于 Seeed Studio reComputer R2000 和 Hailo-8 AI 算力，加速模块实现了基于人脸特征进行的人脸识别功能，搭建一个视觉感知系统，将其作为人体存在的感知检检测。通过摄像头对一个区域的检测，实现对人的存在感知。在这里会将其结合权限管理的场景结合作为应用。其表现为，当有权限的人被摄像头识别到后，设备才允许被使用。否则将无法有权限。同时本数据展示会将监测结果接入 Home Assistant。
+本项目基于 Seeed Studio reComputer R2000 和 Hailo-8 AI 算力加速模块，实现了基于人脸特征的人脸识别功能，并搭建了一个视觉感知系统，将其作为人体存在的感知检测器。通过摄像头对一个区域的检测，可实现对人的存在感知。这里会将其与权限管理场景结合应用。具体表现为，当有权限的人被摄像头识别到后，设备才允许被使用；否则设备将无法被使用。同时，本方案会将监测结果接入 Home Assistant 进行展示。
 
 ## 1. 设备与软件清单
 
@@ -29,17 +29,20 @@ import { Tab, Tabs } from 'rspress/theme';
 
 ## 2. 硬件连接与基础环境检查
 
-1. 如果你的 R2000 还没有配置 Hailo Module，这个时候，你就需要把电源拔掉，然后安装 Hailo-8 模组。
-2. 插上网线（如果你配置了 Wi-Fi 连接，可以省略）
-3. 接入电源，启动。
+在进行软件安装前，请确保你的硬件已正确连接，并完成基础环境配置。
+
+
+1. 如果你的 R2000 还没有配置 Hailo 模块，此时请拔掉电源，然后安装 Hailo-8 模组。
+2. 插上网线（如果你配置了 Wi-Fi 连接，可以省略此步）。
+3. 接入电源，启动设备。
 
 > 如果你没有安装树莓派系统，可以根据 Wiki 文档来进行，[Flash OS - Wiki](https://wiki.seeedstudio.com/r2000_series_getting_start/#flash-os)。
 
 ---
 
-这里将采用 SSH 的方式远程，通过本机电脑远程连接 reComputer R2000 来进行软件安装，其他方式不再赘述。
+这里将采用 SSH 方式远程连接 reComputer R2000 进行软件安装，其他方式不再赘述。
 
-目前测试的 R2000 设备的树莓派发行版本是 `Debian GNU/Linux 12 (bookworm)`，Raspberry Pi OS （64-bit）。
+目前测试的 R2000 设备上安装的树莓派发行版本是 `Debian GNU/Linux 12 (bookworm)`，即 `Raspberry Pi OS （64-bit）`。
 
 *ssh 连接*指令:
 
@@ -73,7 +76,7 @@ Codename: bookworm
 
 >[!note]
 >
-> 对于中国大陆用户，你可以先用这个来脚本来配置你的镜像源，来提升你的下载速度。
+> 对于中国大陆用户，你可以先用此脚本来配置你的镜像源，以提升你的下载速度。
 >
 > ```shell
 > # 因为需要更高的权限，所以拆分运行
@@ -93,7 +96,7 @@ Codename: bookworm
 
 #### 更新系统软件
 
-为了确保你的树莓派系统运行最新的软件。执行如下命令进行更新：
+为了确保你的 Raspberry Pi 系统运行最新的软件，请执行如下命令进行更新：
 
 ```shell
 # ensure that your Raspberry Pi runs the latest software. Run the following command to update:
@@ -139,7 +142,7 @@ cd face-recognition-api
 uv sync
 ```
 
-> 通过 `uv sync` 来同步下载 Python 项目所需要的库依赖。
+> 通过 `uv sync` 来同步下载 Python 项目所需的库依赖。
 
 ### 2.3 安装 HailoRT
 
@@ -154,7 +157,7 @@ uv sync
 - `hailort-<version>-<python-tag>-<abi-tag>-<platform-tag>.whl` - PyHailoRT，通过 Python API 来访问 Hailo 功能
 
 :::details 版本说明
-如上三个文件，本仓库已经提供了 `4.21.0` 的版本文件，如果需要下载特定的其他版本，你可以在 [Software Downloads - Developer Zone](https://hailo.ai/developer-zone/software-downloads/) 下载所需要的软件版本（需要注册账号并登录才能访问）可以下载到这些文件。
+如上三个文件，本仓库已经提供了 `4.21.0` 的版本文件，如果需要下载特定的其他版本，请访问 [Software Downloads - Developer Zone](https://hailo.ai/developer-zone/software-downloads/)。请注意，下载这些文件需要注册账号并登录。
 
 <img
   src="https://files.seeedstudio.com/wiki/solution/application/ai-presence-control/hailo-packages-install.png"
@@ -187,7 +190,7 @@ sudo apt-get install dkms
 sudo dpkg --install hailort-4.21.0/hailort_4.21.0_arm64.deb hailort-4.21.0/hailort-pcie-driver_4.21.0_all.deb
 ```
 
-其中 `PyHailoRT 4.21.0` 已经由 `uv sync` 在本项目中进行安装了，无需另外的安装；PyHailoRT 是跟 Python 项目绑定的。
+其中 `PyHailoRT 4.21.0` 已经由 `uv sync` 在本项目中进行安装，无需另外操作；PyHailoRT 是与 Python 项目绑定的。
 
 ---
 
@@ -335,11 +338,11 @@ flow.set('hailo_host', '192.168.10.179');
 flow.set('hailo_port', '8000');
 ```
 
-编辑 `192.168.10.179` 为你的 Hailo 设备所在的 IP 地址。
+请将 `192.168.10.179` 编辑为你的 Hailo 设备所在的 IP 地址。
 
 ---
 
-> 绿色的 Grove Vision V2 的节点会单独对应一个设备，不能支持对多个 V2 设备的接入，但可以复制多个 Grove Vision AI v2 节点，注意前后的节点处理节点也要复制。
+> 绿色的 Grove Vision V2 的节点会单独对应一个设备，不能支持对多个 V2 设备的接入，但可以复制多个 Grove Vision AI v2 节点，并注意同时复制前后的处理节点。
 
 修改如下的 Inject 节点中的 `msg.topic` 为前面要你记录的客户端 ID：
 
@@ -385,6 +388,18 @@ flow.set('hailo_port', '8000');
 - `name`，录入人脸用户的名字
 - `collection`，在数据库中位于的集合位置
 
+<img
+  src="https://files.seeedstudio.com/wiki/solution/application/ai-presence-control/nodered-face-enroll-env.png"
+  alt="nodered-face-enroll-env"
+  style={{
+    display: 'block',
+    margin: '0 auto',
+    width: '100%',
+    height: 'auto',
+    borderRadius: '12px',
+  }}
+/>
+
 #### `msg.topic`
 
 ```blank
@@ -397,9 +412,44 @@ access/enroll/grove_vision_ai_v2_eb9e4d18
 
 如下是一个示例操作：
 
-【添加视频】
+import { useState } from 'react';
 
-![nodered-face-enroll-env](https://files.seeedstudio.com/wiki/solution/application/ai-presence-control/nodered-face-enroll-env.png)
+export const VideoPlayer = ({ src }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  
+  return (
+    <div style={{ position: 'relative', width: '100%' }}>
+      {isLoading && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 10,
+          background: 'rgba(255,255,255,0.9)',
+          padding: '20px',
+          borderRadius: '8px'
+        }}>
+          加载中...
+        </div>
+      )}
+      <video
+        width="100%"
+        controls
+        preload="metadata"
+        onLoadStart={() => setIsLoading(true)}
+        onCanPlay={() => setIsLoading(false)}
+        style={{ borderRadius: '8px' }}
+      >
+        <source src={src} type="video/quicktime" />
+        <source src={src} type="video/mp4" />
+        您的浏览器不支持视频播放。
+      </video>
+    </div>
+  );
+};
+
+<VideoPlayer src="https://files.seeedstudio.com/wiki/solution/application/ai-presence-control/face-embeded-nodered-overview.mov" />
 
 ## 接入 Home Assistant
 
@@ -421,14 +471,13 @@ https://github.com/Seeed-Solution/AI_Presence_Control/tree/face_mark/example/HA_
 
 复制项目中的 `blueprints/automation/countdown_control.yaml` 内容。
 
-> 如果没有 File editor，请前往 设置-加载项( `Settings - Addons` )中的商店进行下载。
+> 如果没有 File editor，请前往 **设置** -> **加载项** (`Settings - Addons`) 中的商店进行下载。
 
 通过 `File editor` 导航到 `/blueprints/automation/` 路径下。
 
-创建一个名为 `countdown_control.yaml` 的文件名，并将拷贝的内容粘贴进去。
+创建一个名为 `countdown_control.yaml` 的文件，并将拷贝的内容粘贴进去。
 
 ![ha-blueprints-create](https://files.seeedstudio.com/wiki/solution/application/ai-presence-control/ha-blueprints-create.png)
-
 
 完成后，请**重启 Home Assistant**，或者在开发者工具中选择**重载自动化**，以便让 HA 识别新的蓝图。
 
@@ -436,26 +485,33 @@ https://github.com/Seeed-Solution/AI_Presence_Control/tree/face_mark/example/HA_
 
 这是倒计时的核心。
 
-1. 前往 **设置** -> **设备与服务** -> **辅助元素(`Helper`)**。
+1. 前往 **设置** -> **设备与服务** -> **辅助元素(`Helper`)** 或者访问 `http://homeassistant.local:8123/config/helpers`。
 2. 点击 **创建辅助元素**，然后选择 **计时器 (Timer)**。
 3. **命名**：给它一个清晰的名字，例如 `人脸识别授权计时器`。其实体ID将自动生成（例如 `timer.face_auth_timer`），请记下这个**实体ID**。
 4. 其他选项（图标、恢复）可留空，直接点击 **创建**。
 
+![ha-timer-created](https://files.seeedstudio.com/wiki/solution/application/ai-presence-control/ha-timer-created.png)
 
 ### 基于蓝图创建自动化
 
-1. 前往 **设置** -> **自动化与场景** -> **蓝图**。
+1. 前往 **设置** -> **自动化与场景** -> **蓝图** 或者访问 `http://homeassistant.local:8123/config/blueprint/dashboard`。
 2. 找到名为 `Robust Countdown Control (MQTT triggered)` 的蓝图，点击 **创建自动化**。
+
+  ![blueprint-create-automation](https://files.seeedstudio.com/wiki/solution/application/ai-presence-control/blueprint-create-automation.png)
 3. **配置自动化**:
     - **MQTT Topic**：填写您的人脸识别系统发布成功消息的主题（默认为 `access/verify`）。
     - **Target Device**：点击`选择实体`，选择您想要控制的设备，例如一个 `switch.smart_plug`。
     - **Timer Helper**：点击`选择实体`，选择您在第2步中创建的那个**计时器助手**。
     - **Duration (minutes)**：根据需要设置授权时长，默认为15分钟。
-4. 点击 **保存**。
+4. 点击 **保存**（可以采用默认的名称进行脚本保存）。
+
+![blueprint-create-automation](https://files.seeedstudio.com/wiki/solution/application/ai-presence-control/blueprint-create-automation.png)
 
 ### 添加脚本配置
 
-此项目包含一个用于"+"5分钟"功能的脚本。请将 `scripts/timer_controls.yaml` 文件中的内容添加到您 Home Assistant 的脚本配置中。这通常意味着将其内容复制粘贴到您的 `scripts.yaml` 文件里。
+为了便于系统识别到认证的人之后，可以直接延时授权时间，此项目包含一个用于"+"5分钟"功能的脚本。请将 [scripts/timer_controls.yaml](https://github.com/Seeed-Solution/AI_Presence_Control/raw/refs/heads/face_mark/example/HA_CountDown_Control/scripts/timer_controls.yaml) 文件中的内容添加到您 Home Assistant 的脚本配置中。这通常意味着将其内容复制粘贴到您的 `scripts.yaml` 文件里。
+
+![ha-script-5-mins](https://files.seeedstudio.com/wiki/solution/application/ai-presence-control/ha-script-5-mins.png)
 
 **重要**：添加后，请务必将脚本中所有的 `timer.your_timer_entity_id` 替换为您在第2步中创建的计时器的**真实实体ID**。
 
@@ -466,18 +522,18 @@ https://github.com/Seeed-Solution/AI_Presence_Control/tree/face_mark/example/HA_
 1. 打开您想要添加监控卡片的仪表盘。
 2. 点击右上角的 **三个点** -> **编辑仪表盘**。
 3. 点击右下角的 **"+"** 按钮添加一个新视图，或在现有视图中点击 **"添加卡片"**。
-4. 如果您想快速搭建，可以进入 **原始配置编辑器**，将`dashboards/countdown_example.yaml`中的内容复制进去。
+4. 如果您想快速搭建，可以进入 **原始配置编辑器**，将[dashboards/countdown_example.yaml](https://github.com/Seeed-Solution/AI_Presence_Control/raw/refs/heads/face_mark/example/HA_CountDown_Control/dashboards/countdown_example.yaml)中的内容复制进去。
 5. **重要**：在卡片配置中，您需要修改以下占位符：
     - 将所有 `timer.your_timer_entity_id` 替换为您在第2步中创建的计时器的**真实实体ID**。
     - 将 `YOUR_USER_ID_HERE` 替换为您自己的管理员用户ID，以确保控制按钮对您可见。
 
 #### 测试
 
-现在，通过MQTT向您配置的主题发布一条消息，例如：
+现在，通过 MQTT 向您配置的主题发布一条消息，例如：
 
 - Topic: `access/verify`
 - Payload: `{"result": true, "user": "test"}`
 
-您应该能在HA的仪表盘上看到倒计时开始，并且您选择控制的设备会自动开启。等待倒计时结束后，设备会自动关闭。
+您应该能在 HA 的仪表盘上看到倒计时开始，并且您选择控制的设备会自动开启。等待倒计时结束后，设备会自动关闭。
 
 </Steps>
